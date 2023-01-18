@@ -41,6 +41,10 @@ Now I can run
 https://webpack.js.org/guides/asset-management/#setup
 
 
+## HtmlWebpackPlugin
+```npm install --save-dev html-webpack-plugin```
+
+
 ## How to run live development server
 1. Grab `webpack-dev-server` as a development bundle
 ```npm install --save-dev webpack-dev-server```

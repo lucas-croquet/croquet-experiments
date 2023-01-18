@@ -34,7 +34,17 @@ Add ```"build":"webpack"``` to package.json
 Now I can run 
 ```npm run build``` as a shortcut for ```npx webpack``` 
 
-8. How to run a live development
+## How to handle other files
+1. Install a css loader
+```npm install --save-dev style-loader css-loader```
+
+https://webpack.js.org/guides/asset-management/#setup
+
+
+## How to run live development server
+1. Grab `webpack-dev-server` as a development bundle
+```npm install --save-dev webpack-dev-server```
+
 
 
 # Notes

@@ -2,5 +2,4 @@ body {
     margin: 0;
     background: url('./logo-small.png');
 }
-/* .threecanvas { position: fixed; touch-action: none; } */
-
+.threeCanvas { position: fixed; touch-action: none; } 

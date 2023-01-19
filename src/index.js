@@ -1,154 +1,102 @@
-import * as Croquet from '@croquet/croquet';
-import * as THREE from 'three';
+import * as Croquet from "@croquet/croquet";
+import * as THREE from "three";
 
-import './style.css';
-import Logo from './logo-small.png';
+import "./style.css";
+import Logo from "./logo-small.png";
 
-import printMe from './print.js';
+import printMe from "./print.js";
+import { Box } from "./box.js";
 
-class GameModel extends Croquet.Model{
-  init(options={}) {
+class GameModel extends Croquet.Model {
+  init(options = {}) {
     super.init(options);
     console.log("GameModel init");
-    this.children = [];
-    this.children.push(BoxModel.create({sceneModel: this}));
+    // this.children = [];
+    // this.children.push(BoxModel.create({sceneModel: this}));
     this.future(50).step();
+
+    var myBox = new Box();
   }
 
-  step() {
-
-  }
+  step() {}
 }
 GameModel.register("GameModel");
 
-class BoxModel extends Croquet.Model {
-  init(options={}) {
-    super.init(options);
-    console.log("BoxModel init");
-    this.position = new THREE.Vector3(.5,0,0);
-    
-    console.log("initialPos:" + this.position.x);
-    this.future(100).step();
-  }
-
-  static types() {
-    return {
-      "THREE.Vector3": THREE.Vector3,        // serialized as '{"x":...,"y":...,"z":...}'
-      "THREE.Quaternion": THREE.Quaternion,
-    };
-  }
-
-  step(){
-    var newPos = this.position;
-    newPos.x += .005;
-    this.position.set(newPos.x, newPos.y, newPos.z);
-    console.log("BoxModel Step");
-    console.log(this.position.x);
-    this.publish(this.id, 'position-changed', this.position);
-    this.future(50).step();
-  }
-}
-BoxModel.register("BoxModel");
-
-class BoxView extends Croquet.View {
-  constructor(model){
+class GameView extends Croquet.View {
+  constructor(model) {
+    console.log("GameView Constructor");
     super(model);
-    // box in scene
-    this.myBoxGeo = new THREE.BoxGeometry(1,1,1);
-    this.myBoxMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 } );
-    this.myBoxMesh = new THREE.Mesh(this.myBoxGeo, this.myBoxMaterial);
-    
-    scene.add(this.myBoxMesh);
-    this.subscribe(model.id, {event: 'position-changed', handling:'oncePerFrame'}, this.move);
+    this.model = model;
+    this.init();
+
+    // EVENT HANDLERS
+    window.addEventListener("resize", this.onWindowResize);
   }
 
-  move(position){
-    this.myBoxMesh.position.x = position.x;
+  init() {
+    // Basic Three Scene
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+
+    const canvasWidth = window.innerWidth;
+    const canvasHeight = window.innerHeight;
+
+    // CAMERA
+    this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 8000);
+    this.camera.position.set(0, 0.2, 5);
+
+    // LIGHTS
+    this.ambientLight = new THREE.AmbientLight(0x333333);
+
+    this.light = new THREE.DirectionalLight(0xffffff, 1.0);
+    this.light.position.set(0.32, 0.39, 0.7);
+
+    // RENDERER
+    this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(canvasWidth, canvasHeight);
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+    this.renderer.setClearAlpha(0.9);
+    this.renderer.domElement.classList.add("threeCanvas");
+    container.appendChild(this.renderer.domElement);
+
+    // image file
+    const croquetLogo = new Image();
+    croquetLogo.src = Logo;
+
+    // EVENTS
+    window.addEventListener("resize", this.onWindowResize);
+
+    // CONTROLS
+    // cameraControls = new OrbitControls( camera, renderer.domElement );
+    // cameraControls.addEventListener( 'change', render );
+
+    // scene itself
+    this.scene = new THREE.Scene();
+    this.scene.add(this.ambientLight);
+    this.scene.add(this.light);
+
+    // Button test
+    // const btn = document.createElement('button');
+    // btn.innerHTML = 'Click me and check the console!';
+    // btn.onclick = printMe;
+    // container.appendChild(btn);
+  }
+
+  onWindowResize() {
+    const canvasWidth = window.innerWidth;
+    const canvasHeight = window.innerHeight;
+
+    renderer.setSize(canvasWidth, canvasHeight);
+
+    camera.aspect = canvasWidth / canvasHeight;
+    camera.updateProjectionMatrix();
+  }
+
+  update(time) {
+    this.renderer.render(this.scene, this.camera);
   }
 }
-
-class MyThreeView extends Croquet.View {
-  constructor(model){
-    super(model);
-    init();
-    model.children.forEach(childModel => this.attachChild(childModel));
-  }
-
-  attachChild(childModel) {
-    scene.add(new BoxView(childModel).myBoxMesh);
-  }
-
-  update(time){
-    renderer.render( scene, camera );
-  }
-}
-
-// Basic Three Scene
-let camera, scene, renderer;
-let ambientLight, light;
-function init() {
-  const container = document.createElement( 'div' );
-  document.body.appendChild( container );
-
-  const canvasWidth = window.innerWidth;
-  const canvasHeight = window.innerHeight;
-
-  // CAMERA
-  camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 80000 );
-  camera.position.set( 0, .2, 5 );
-
-  // LIGHTS
-  ambientLight = new THREE.AmbientLight( 0x333333 );
-
-  light = new THREE.DirectionalLight( 0xFFFFFF, 1.0 );
-  light.position.set( 0.32, 0.39, 0.7 );
-
-  // RENDERER
-  renderer = new THREE.WebGLRenderer( {alpha: true, antialias: true } );
-  renderer.setPixelRatio( window.devicePixelRatio );
-  renderer.setSize( canvasWidth, canvasHeight );
-  renderer.outputEncoding = THREE.sRGBEncoding;
-  renderer.setClearAlpha(.9);
-  renderer.domElement.classList.add('threeCanvas')
-  container.appendChild( renderer.domElement );
-
-  // image file
-  const croquetLogo = new Image();
-  croquetLogo.src = Logo;
-  
-  // EVENTS
-  window.addEventListener( 'resize', onWindowResize );
-
-  // CONTROLS
-  // cameraControls = new OrbitControls( camera, renderer.domElement );
-  // cameraControls.addEventListener( 'change', render );
-
-  // scene itself
-  scene = new THREE.Scene();
-  scene.add( ambientLight );
-  scene.add( light );
-
-  // Button test
-  // const btn = document.createElement('button');
-  // btn.innerHTML = 'Click me and check the console!';
-  // btn.onclick = printMe;
-  // container.appendChild(btn);
-
-}
-
-// EVENT HANDLERS
-window.addEventListener( 'resize', onWindowResize );
-function onWindowResize() {
-
-  const canvasWidth = window.innerWidth;
-  const canvasHeight = window.innerHeight;
-
-  renderer.setSize( canvasWidth, canvasHeight );
-
-  camera.aspect = canvasWidth / canvasHeight;
-  camera.updateProjectionMatrix();
-}
-
 
 Croquet.Session.join({
   appId: "com.lucasrumney.A",
@@ -156,5 +104,5 @@ Croquet.Session.join({
   name: "A",
   password: "secret",
   model: GameModel,
-  view: MyThreeView
+  view: GameView,
 });

@@ -6,6 +6,20 @@ import Logo from './logo-small.png';
 
 import printMe from './print.js';
 
+class GameModel extends Croquet.Model{
+  init(options={}) {
+    super.init(options);
+    console.log("GameModel init");
+    this.children = [];
+    this.children.push(BoxModel.create({sceneModel: this}));
+    this.future(50).step();
+  }
+
+  step() {
+
+  }
+}
+GameModel.register("GameModel");
 
 class BoxModel extends Croquet.Model {
   init(options={}) {
@@ -14,7 +28,7 @@ class BoxModel extends Croquet.Model {
     this.position = new THREE.Vector3(.5,0,0);
     
     console.log("initialPos:" + this.position.x);
-    this.future(50).step();
+    this.future(100).step();
   }
 
   static types() {
@@ -26,33 +40,42 @@ class BoxModel extends Croquet.Model {
 
   step(){
     var newPos = this.position;
-    newPos.x += .001;
+    newPos.x += .005;
     this.position.set(newPos.x, newPos.y, newPos.z);
     console.log("BoxModel Step");
     console.log(this.position.x);
     this.publish(this.id, 'position-changed', this.position);
-    this.future(16).step();
+    this.future(50).step();
   }
 }
 BoxModel.register("BoxModel");
 
-class MyThreeView extends Croquet.View {
+class BoxView extends Croquet.View {
   constructor(model){
     super(model);
-
-    init();
     // box in scene
     this.myBoxGeo = new THREE.BoxGeometry(1,1,1);
     this.myBoxMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 } );
     this.myBoxMesh = new THREE.Mesh(this.myBoxGeo, this.myBoxMaterial);
     
     scene.add(this.myBoxMesh);
-
     this.subscribe(model.id, {event: 'position-changed', handling:'oncePerFrame'}, this.move);
   }
 
   move(position){
     this.myBoxMesh.position.x = position.x;
+  }
+}
+
+class MyThreeView extends Croquet.View {
+  constructor(model){
+    super(model);
+    init();
+    model.children.forEach(childModel => this.attachChild(childModel));
+  }
+
+  attachChild(childModel) {
+    scene.add(new BoxView(childModel).myBoxMesh);
   }
 
   update(time){
@@ -132,6 +155,6 @@ Croquet.Session.join({
   apiKey: "12E0A40C1bH8JzlbaElBkr8K2FArP18uHgjJFko50",
   name: "A",
   password: "secret",
-  model: BoxModel,
+  model: GameModel,
   view: MyThreeView
 });
